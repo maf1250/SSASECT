@@ -16,15 +16,15 @@
     <section class="hero-card">
       <div class="hero-topbar"></div>
       <div class="hero-content">
-        <div class="hero-badge">أنماط التدريب والنصاب التدريبي</div>
+        <div class="hero-badge">أنماط التدريب والنصاب التدريبي
+                      إعداد:  <strong> منصور بن عبدالعزيز الفايز </strong> 
+</div>
         <h1>حاسبة النصاب التدريبي للمقررات التقليدية والإلكترونية</h1>
         <p class="hero-text">
           أداة مبسطة لعرض الفروقات بين <strong>التدريب عن بعد</strong> و<strong>التدريب الذاتي</strong>
           مع حاسبة فورية للنصاب التدريبي للمدرب وفق آلية الساعات المعتمدة.
         </p>
-          <p class="hero-badge">
-              إعداد: <strong> منصور بن عبدالعزيز الفايز </strong> 
-        </p>
+
       </div>
     </section>
 
@@ -126,7 +126,7 @@
               <label for="elearningHours">ساعات الاتصال للشق الإلكتروني / المدمج</label>
               <button type="button" class="help-btn" data-help="تدخل هنا ساعات الشق الإلكتروني. عند اختيار التدريب عن بعد تحتسب كاملة، وعند اختيار التدريب الذاتي تكون نتيجتها صفر.">?</button>
             </div>
-            <input id="elearningHours" type="number" min="0" step="0.01" placeholder="مثال: 2" />
+            <input id="elearningHours" type="number" min="0" step="1" placeholder="مثال: 2" />
           </div>
 
           <div class="field full hidden note-box" id="blendedNoteBox">
@@ -142,7 +142,7 @@
               <label for="theoryHours">ساعات الاتصال للشق النظري</label>
               <button type="button" class="help-btn" data-help="في الوضع التقليدي: ساعات النظري تحتسب كاملة. عند تفعيل النمط الإلكتروني يتم إخفاء هذا الحقل لأن النظري يتحول إلى تدريب إلكتروني.">?</button>
             </div>
-            <input id="theoryHours" type="number" min="0" step="0.01" placeholder="مثال: 2" />
+            <input id="theoryHours" type="number" min="0" step="1" placeholder="مثال: 2" />
           </div>
 
           <div class="field hidden" id="practicalHoursField">
@@ -150,7 +150,7 @@
               <label for="practicalHours">ساعات الاتصال للشق العملي</label>
               <button type="button" class="help-btn" data-help="في الحساب التقليدي أو العملي: كل 3 ساعات عملي تعادل ساعتين نظري، أي الساعات العملية تضرب في 0.66667.">?</button>
             </div>
-            <input id="practicalHours" type="number" min="0" step="0.01" placeholder="مثال: 3" />
+            <input id="practicalHours" type="number" min="0" step="1" placeholder="مثال: 3" />
           </div>
 
           <div class="field full result-field">
