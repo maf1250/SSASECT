@@ -16,8 +16,9 @@
     <section class="hero-card">
       <div class="hero-topbar"></div>
       <div class="hero-content">
-        <div class="hero-badge">أنماط التدريب والنصاب التدريبي
-                      إعداد:  <strong> منصور بن عبدالعزيز الفايز </strong> 
+        <div class="hero-badge">
+  <span>أنماط التدريب والنصاب التدريبي</span>
+  <small>إعداد: منصور بن عبدالعزيز الفايز</small>
 </div>
         <h1>حاسبة النصاب التدريبي للمقررات التقليدية والإلكترونية</h1>
         <p class="hero-text">
@@ -122,37 +123,37 @@
           </div>
 
           <div class="field hidden" id="elearningHoursField">
-            <div class="label-row">
-              <label for="elearningHours">ساعات الاتصال للشق الإلكتروني / المدمج</label>
-              <button type="button" class="help-btn" data-help="تدخل هنا ساعات الشق الإلكتروني. عند اختيار التدريب عن بعد تحتسب كاملة، وعند اختيار التدريب الذاتي تكون نتيجتها صفر.">?</button>
-            </div>
-            <input id="elearningHours" type="number" min="0" step="1" placeholder="مثال: 2" />
-          </div>
+  <div class="label-row">
+    <label for="elearningHours">ساعات الاتصال للشق الإلكتروني / المدمج</label>
+    <button type="button" class="help-btn" data-help="تدخل هنا ساعات الشق الإلكتروني. عند اختيار التدريب عن بعد تحتسب كاملة، وعند اختيار التدريب الذاتي تكون نتيجتها صفر.">?</button>
+  </div>
+  <input id="elearningHours" type="number" min="0" step="1" placeholder="مثال: 2" />
+</div>
 
-          <div class="field full hidden note-box" id="blendedNoteBox">
-            <div class="label-row note-title">
-              <strong>تنبيه خاص بالمقرر ذي الشقين عند التدريب المدمج</strong>
-              <button type="button" class="help-btn" data-help="في حال انشاء شعب لمقررات ذات شقين (عملي ونظري) ويتم تدريبها عن طريق التدريب المدمج فإن الشعبة النظرية يسجل فيها نوع الجدولة مدمج والشعبة العملي تسجل بنوع الجدولة عملي">?</button>
-            </div>
-            <p>في حال إنشاء شعب لمقررات ذات شقين (عملي ونظري) ويتم تدريبها عن طريق التدريب المدمج فإن الشعبة النظرية يسجل فيها نوع الجدولة مدمج والشعبة العملي تسجل بنوع الجدولة عملي.</p>
-          </div>
+<div class="field hidden" id="practicalHoursField">
+  <div class="label-row">
+    <label for="practicalHours">ساعات الاتصال للشق العملي</label>
+    <button type="button" class="help-btn" data-help="في الحساب التقليدي أو العملي: كل 3 ساعات عملي تعادل ساعتين نظري، أي الساعات العملية تضرب في 0.66667.">?</button>
+  </div>
+  <input id="practicalHours" type="number" min="0" step="1" placeholder="مثال: 3" />
+</div>
 
-          <div class="field hidden" id="theoryHoursField">
-            <div class="label-row">
-              <label for="theoryHours">ساعات الاتصال للشق النظري</label>
-              <button type="button" class="help-btn" data-help="في الوضع التقليدي: ساعات النظري تحتسب كاملة. عند تفعيل النمط الإلكتروني يتم إخفاء هذا الحقل لأن النظري يتحول إلى تدريب إلكتروني.">?</button>
-            </div>
-            <input id="theoryHours" type="number" min="0" step="1" placeholder="مثال: 2" />
-          </div>
+<div class="field hidden" id="theoryHoursField">
+  <div class="label-row">
+    <label for="theoryHours">ساعات الاتصال للشق النظري</label>
+    <button type="button" class="help-btn" data-help="في الوضع التقليدي: ساعات النظري تحتسب كاملة. عند تفعيل النمط الإلكتروني يتم إخفاء هذا الحقل لأن النظري يتحول إلى تدريب إلكتروني.">?</button>
+  </div>
+  <input id="theoryHours" type="number" min="0" step="1" placeholder="مثال: 2" />
+</div>
 
-          <div class="field hidden" id="practicalHoursField">
-            <div class="label-row">
-              <label for="practicalHours">ساعات الاتصال للشق العملي</label>
-              <button type="button" class="help-btn" data-help="في الحساب التقليدي أو العملي: كل 3 ساعات عملي تعادل ساعتين نظري، أي الساعات العملية تضرب في 0.66667.">?</button>
-            </div>
-            <input id="practicalHours" type="number" min="0" step="1" placeholder="مثال: 3" />
-          </div>
-
+<div class="field full hidden note-box" id="blendedNoteBox">
+  <div class="label-row note-title">
+    <strong>تنبيه خاص بالمقرر ذي الشقين عند التدريب المدمج</strong>
+    <button type="button" class="help-btn" data-help="في حال انشاء شعب لمقررات ذات شقين (عملي ونظري) ويتم تدريبها عن طريق التدريب المدمج فإن الشعبة النظرية يسجل فيها نوع الجدولة مدمج والشعبة العملي تسجل بنوع الجدولة عملي">?</button>
+  </div>
+  <p>في حال إنشاء شعب لمقررات ذات شقين (عملي ونظري) ويتم تدريبها عن طريق التدريب المدمج فإن الشعبة النظرية يسجل فيها نوع الجدولة مدمج والشعبة العملي تسجل بنوع الجدولة عملي.</p>
+</div>
+         
           <div class="field full result-field">
             <label for="resultHours">الساعات المعتمدة للنصاب التدريبي</label>
             <input id="resultHours" type="text" readonly value="0.00 ساعة" />
