@@ -164,6 +164,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
+
 }
 
 .field.full { grid-column: 1 / -1; }
@@ -413,4 +414,16 @@ select:focus {
     width: 38px;
     height: 38px;
   }
+
+.field .label-row {
+  min-height: 52px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.field .label-row label {
+  line-height: 1.5;
+}
 }
