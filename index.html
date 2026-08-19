@@ -460,7 +460,6 @@
           أداة مبسطة لعرض الفروقات بين <strong>التدريب عن بعد</strong> و<strong>التدريب الذاتي</strong>
           مع حاسبة فورية للنصاب التدريبي للمدرب وفق آلية الساعات المعتمدة.
         </p>
-
       </div>
     </section>
 
@@ -576,7 +575,8 @@
           <div class="field hidden" id="theoryHoursField">
             <div class="label-row">
               <label for="theoryHours">ساعات الاتصال للشق النظري</label>
-              <button type="button" class="help-btn" data-help="في الوضع التقليدي: ساعات النظري تحتسب كاملة. عند تفعيل النمط الإلكتروني يتم إخفاء هذا الحقل لأن النظري يتحول إلى تدريب إلكتروني.">?</button>
+              <!-- تم تعديل التلميح هنا ليكون دقيقاً -->
+              <button type="button" class="help-btn" data-help="ساعات النظري تحتسب كاملة. في المقرر ذي الشقين (المدمج) يختفي هذا الحقل لأن النظري يتحول لتدريب إلكتروني، أما في (الشق الواحد النظري) فتُجمع الساعات الحضورية مع الإلكترونية.">?</button>
             </div>
             <input id="theoryHours" type="number" min="0" step="1" placeholder="مثال: 2" />
           </div>
@@ -696,8 +696,9 @@
             total = practicalCalculated;
             explanation = `مقرر ذو شقين مع تدريب ذاتي: ساعات الشق الإلكتروني لا تحتسب، ويحتسب العملي فقط بالمعامل ${PRACTICAL_FACTOR}. النتيجة: (${formatNumber(practical)} × ${PRACTICAL_FACTOR}) = ${formatNumber(total)} ساعة.`;
           } else if (courseType === 'singleTheory') {
-            total = 0;
-            explanation = 'مقرر شق واحد إلكتروني بنمط تدريب ذاتي: لا يتم احتساب ساعات اتصال للنصاب التدريبي، لذلك النتيجة = 0.00 ساعة.';
+            // تم التعديل هنا ليحسب الساعات الحضورية في الذاتي
+            total = theory; 
+            explanation = `مقرر شق واحد نظري مع تدريب ذاتي: التدريب الذاتي لا يضيف ساعات إلكترونية، وتحتسب ساعات النظري الحضورية كاملة. النتيجة: ${formatNumber(theory)} نظري + 0 إلكتروني = ${formatNumber(total)} ساعة.`;
           } else {
             total = practical * PRACTICAL_FACTOR;
             explanation = `مقرر شق واحد عملي مع تدريب ذاتي: التدريب الذاتي لا يضيف ساعات إلكترونية، ويحتسب العملي فقط بالمعامل ${PRACTICAL_FACTOR}. النتيجة: (${formatNumber(practical)} × ${PRACTICAL_FACTOR}) = ${formatNumber(total)} ساعة.`;
@@ -708,8 +709,9 @@
             total = practicalCalculated + eHours;
             explanation = `مقرر ذو شقين مع تدريب عن بعد: العملي يحتسب بالمعامل ${PRACTICAL_FACTOR}، وتضاف ساعات الشق الإلكتروني كاملة. النتيجة: (${formatNumber(practical)} × ${PRACTICAL_FACTOR}) + ${formatNumber(eHours)} = ${formatNumber(total)} ساعة.`;
           } else if (courseType === 'singleTheory') {
-            total = eHours;
-            explanation = `مقرر شق واحد نظري مع تدريب عن بعد: تحتسب ساعات الشق الإلكتروني كاملة = ${formatNumber(total)} ساعة.`;
+            // تم التعديل هنا ليجمع الحضوري + عن بعد
+            total = theory + eHours; 
+            explanation = `مقرر شق واحد نظري مع تدريب عن بعد: تحتسب ساعات النظري الحضورية كاملة وتضاف لها ساعات التدريب عن بعد كاملة. النتيجة: ${formatNumber(theory)} نظري + ${formatNumber(eHours)} عن بعد = ${formatNumber(total)} ساعة.`;
           } else {
             total = (practical * PRACTICAL_FACTOR) + eHours;
             explanation = `مقرر شق واحد عملي مع تدريب عن بعد: يحتسب العملي بالمعامل ${PRACTICAL_FACTOR} وتضاف ساعات الشق الإلكتروني كاملة. النتيجة: (${formatNumber(practical)} × ${PRACTICAL_FACTOR}) + ${formatNumber(eHours)} = ${formatNumber(total)} ساعة.`;
