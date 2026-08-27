@@ -157,29 +157,34 @@
         </div>
 
         <div class="field">
-          <label for="scheduleType">نوع الجدولة</label>
-          <select id="scheduleType">
-            <option value="both">نظري وعملي (كامل المقرر)</option>
-            <option value="theory">الشق النظري فقط</option>
-            <option value="practical">الشق العملي فقط</option>
+          <label for="scheduleType">نوع الجدولة للمدرب</label>
+          <select id="scheduleType" disabled>
+            <option value="">اختر المقرر أولاً</option>
           </select>
         </div>
         
         <div class="field">
-          <label for="modeSelect">النمط</label>
-          <select id="modeSelect">
+          <label for="modeSelect">نمط التنفيذ</label>
+          <select id="modeSelect" disabled>
             <option value="traditional">تقليدي (حضوري بالكامل)</option>
             <option value="distance">مدمج - عن بعد</option>
             <option value="self">مدمج - ذاتي</option>
           </select>
         </div>
 
-        <!-- يظهر هذا الحقل فقط إذا اختار المقرر كاملاً وكان النمط مدمجاً -->
+        <!-- يظهر هذا الحقل فقط إذا اختار المقرر كاملاً وكان النمط مدمجاً والمقرر له شقين -->
         <div class="field hidden" id="ePartField">
           <label for="ePartSelect">الشق المحوّل لإلكتروني</label>
           <select id="ePartSelect">
             <option value="theory">الشق النظري</option>
             <option value="practical">الشق العملي</option>
+          </select>
+        </div>
+
+        <!-- يظهر هذا الحقل عند اختيار مدمج لاختيار عدد الساعات -->
+        <div class="field hidden" id="eHoursField">
+          <label for="eHoursSelect">ساعات النمط الإلكتروني</label>
+          <select id="eHoursSelect">
           </select>
         </div>
 
@@ -224,15 +229,16 @@
     </div>
   </main>
 
-  <!-- قسم العداد أسفل الصفحة -->
   <footer>
     <span class="visitor-text">إجمالي عدد الزيارات</span>
+    <img src="https://visitor-badge.laobi.icu/badge?page_id=https%3A%2F%2Fmaf1250.github.io%2FSSASECT%2Fschedule" alt="visitor badge"/>
   </footer>
 
   <script>
     const PRACTICAL_FACTOR = 0.66667;
     let allCourses = []; 
     let schedule = []; 
+    let currentCourseData = null;
 
     const unitSelect = document.getElementById('unitSelect');
     const stageSelect = document.getElementById('stageSelect');
@@ -243,6 +249,8 @@
     const modeSelect = document.getElementById('modeSelect');
     const ePartField = document.getElementById('ePartField');
     const ePartSelect = document.getElementById('ePartSelect');
+    const eHoursField = document.getElementById('eHoursField');
+    const eHoursSelect = document.getElementById('eHoursSelect');
     const addBtn = document.getElementById('addBtn');
     
     const scheduleBody = document.getElementById('scheduleBody');
@@ -250,21 +258,7 @@
     const totalHoursEl = document.getElementById('totalHours');
     const explanationList = document.getElementById('explanationList');
 
-    // إظهار/إخفاء حقل اختيار الشق الإلكتروني
-    function toggleEPart() {
-      if (modeSelect.value === 'traditional') {
-        ePartField.classList.add('hidden');
-      } else {
-        if (scheduleType.value === 'both') {
-          ePartField.classList.remove('hidden');
-        } else {
-          ePartField.classList.add('hidden'); // لا حاجة له إذا كان التدريب نظري فقط أو عملي فقط
-        }
-      }
-    }
-    modeSelect.addEventListener('change', toggleEPart);
-    scheduleType.addEventListener('change', toggleEPart);
-
+    // قراءة البيانات
     Papa.parse("courses.csv", {
       download: true,
       header: true,
@@ -277,83 +271,156 @@
       }
     });
 
+    // التسلسل المنطقي للقوائم (وحدة -> مرحلة -> تخصص -> مقرر)
     function populateUnits() {
       const units = [...new Set(allCourses.map(course => course['الوحدة التدريبية']))].filter(Boolean);
       unitSelect.innerHTML = '<option value="">-- اختر الوحدة التدريبية --</option>';
-      units.forEach(unit => {
-        unitSelect.innerHTML += `<option value="${unit}">${unit}</option>`;
-      });
+      units.forEach(unit => unitSelect.innerHTML += `<option value="${unit}">${unit}</option>`);
     }
 
     unitSelect.addEventListener('change', function() {
-      const selectedUnit = this.value;
-      stageSelect.innerHTML = '<option value="">اختر الوحدة أولاً</option>';
-      stageSelect.disabled = true;
-      majorSelect.innerHTML = '<option value="">اختر المرحلة أولاً</option>';
-      majorSelect.disabled = true;
-      courseSelect.innerHTML = '<option value="">اختر التخصص أولاً</option>';
-      courseSelect.disabled = true;
+      stageSelect.innerHTML = '<option value="">اختر الوحدة أولاً</option>'; stageSelect.disabled = true;
+      majorSelect.innerHTML = '<option value="">اختر المرحلة أولاً</option>'; majorSelect.disabled = true;
+      courseSelect.innerHTML = '<option value="">اختر التخصص أولاً</option>'; courseSelect.disabled = true;
+      resetCourseConfig();
 
-      if (!selectedUnit) return;
-      const filteredByUnit = allCourses.filter(c => c['الوحدة التدريبية'] === selectedUnit);
+      if (!this.value) return;
+      const filteredByUnit = allCourses.filter(c => c['الوحدة التدريبية'] === this.value);
       const stages = [...new Set(filteredByUnit.map(c => c['المرحلة التدريبية']))].filter(Boolean);
       stageSelect.innerHTML = '<option value="">-- اختر المرحلة التدريبية --</option>';
-      stages.forEach(stage => { stageSelect.innerHTML += `<option value="${stage}">${stage}</option>`; });
+      stages.forEach(stage => stageSelect.innerHTML += `<option value="${stage}">${stage}</option>`);
       stageSelect.disabled = false;
     });
 
     stageSelect.addEventListener('change', function() {
-      const selectedUnit = unitSelect.value;
-      const selectedStage = this.value;
+      majorSelect.innerHTML = '<option value="">اختر المرحلة أولاً</option>'; majorSelect.disabled = true;
+      courseSelect.innerHTML = '<option value="">اختر التخصص أولاً</option>'; courseSelect.disabled = true;
+      resetCourseConfig();
 
-      majorSelect.innerHTML = '<option value="">اختر المرحلة أولاً</option>';
-      majorSelect.disabled = true;
-      courseSelect.innerHTML = '<option value="">اختر التخصص أولاً</option>';
-      courseSelect.disabled = true;
-
-      if (!selectedStage) return;
-      const filteredByStage = allCourses.filter(c => c['الوحدة التدريبية'] === selectedUnit && c['المرحلة التدريبية'] === selectedStage);
-      const majors = [...new Set(filteredByStage.map(c => c['التخصص']))].filter(Boolean);
+      if (!this.value) return;
+      const filtered = allCourses.filter(c => c['الوحدة التدريبية'] === unitSelect.value && c['المرحلة التدريبية'] === this.value);
+      const majors = [...new Set(filtered.map(c => c['التخصص']))].filter(Boolean);
       majorSelect.innerHTML = '<option value="">-- اختر التخصص --</option>';
-      majors.forEach(major => { majorSelect.innerHTML += `<option value="${major}">${major}</option>`; });
+      majors.forEach(major => majorSelect.innerHTML += `<option value="${major}">${major}</option>`);
       majorSelect.disabled = false;
     });
 
     majorSelect.addEventListener('change', function() {
-      const selectedUnit = unitSelect.value;
-      const selectedStage = stageSelect.value;
-      const selectedMajor = this.value;
+      courseSelect.innerHTML = '<option value="">اختر التخصص أولاً</option>'; courseSelect.disabled = true;
+      resetCourseConfig();
 
-      courseSelect.innerHTML = '<option value="">اختر التخصص أولاً</option>';
-      courseSelect.disabled = true;
-
-      if (!selectedMajor) return;
-      const filteredCourses = allCourses.filter(c => c['الوحدة التدريبية'] === selectedUnit && c['المرحلة التدريبية'] === selectedStage && c['التخصص'] === selectedMajor);
+      if (!this.value) return;
+      const filtered = allCourses.filter(c => c['الوحدة التدريبية'] === unitSelect.value && c['المرحلة التدريبية'] === stageSelect.value && c['التخصص'] === this.value);
       courseSelect.innerHTML = '<option value="">-- اختر المقرر --</option>';
-      filteredCourses.forEach(course => { courseSelect.innerHTML += `<option value="${course['المقرر']}">${course['المقرر']}</option>`; });
+      filtered.forEach(course => courseSelect.innerHTML += `<option value="${course['المقرر']}">${course['المقرر']}</option>`);
       courseSelect.disabled = false;
     });
 
-    addBtn.addEventListener('click', function() {
-      const selectedCourseName = courseSelect.value;
+    function resetCourseConfig() {
+      currentCourseData = null;
+      scheduleType.innerHTML = '<option value="">اختر المقرر أولاً</option>';
+      scheduleType.disabled = true;
+      modeSelect.disabled = true;
+      modeSelect.value = 'traditional';
+      ePartField.classList.add('hidden');
+      eHoursField.classList.add('hidden');
+    }
+
+    // المنطق الذكي عند اختيار المقرر
+    courseSelect.addEventListener('change', function() {
+      if(!this.value) {
+        resetCourseConfig();
+        return;
+      }
+      
+      currentCourseData = allCourses.find(c => 
+        c['الوحدة التدريبية'] === unitSelect.value &&
+        c['المرحلة التدريبية'] === stageSelect.value &&
+        c['التخصص'] === majorSelect.value &&
+        c['المقرر'] === this.value
+      );
+
+      const tHours = parseFloat(currentCourseData['محاضرة']) || 0;
+      const pHours = parseFloat(currentCourseData['عملي']) || 0;
+
+      scheduleType.innerHTML = '';
+      
+      // تحليل طبيعة المقرر
+      if (tHours > 0 && pHours > 0) {
+        // مقرر بشقين
+        scheduleType.innerHTML += `<option value="both">نظري وعملي (كامل المقرر)</option>`;
+        scheduleType.innerHTML += `<option value="theory">الشق النظري فقط</option>`;
+        scheduleType.innerHTML += `<option value="practical">الشق العملي فقط</option>`;
+      } else if (tHours > 0 && pHours === 0) {
+        // نظري فقط
+        scheduleType.innerHTML += `<option value="theory">نظري فقط</option>`;
+      } else if (tHours === 0 && pHours > 0) {
+        // عملي فقط
+        scheduleType.innerHTML += `<option value="practical">عملي فقط</option>`;
+      }
+
+      scheduleType.disabled = false;
+      modeSelect.disabled = false;
+      modeSelect.value = 'traditional';
+      updateDynamicFields();
+    });
+
+    scheduleType.addEventListener('change', updateDynamicFields);
+    modeSelect.addEventListener('change', updateDynamicFields);
+    ePartSelect.addEventListener('change', updateDynamicFields);
+
+    function updateDynamicFields() {
+      if(!currentCourseData) return;
+
+      const tHours = parseFloat(currentCourseData['محاضرة']) || 0;
+      const pHours = parseFloat(currentCourseData['عملي']) || 0;
       const sType = scheduleType.value;
       const mode = modeSelect.value;
-      const ePart = ePartSelect.value; 
 
-      if(!selectedCourseName) {
+      // 1. التحكم بظهور حقل "الشق المحول لإلكتروني"
+      if (mode !== 'traditional' && sType === 'both' && tHours > 0 && pHours > 0) {
+        ePartField.classList.remove('hidden');
+      } else {
+        ePartField.classList.add('hidden');
+      }
+
+      // 2. التحكم بظهور وبناء قائمة "عدد الساعات الإلكترونية"
+      if (mode !== 'traditional') {
+        eHoursField.classList.remove('hidden');
+        let maxEHours = 0;
+
+        if (sType === 'theory' || (sType === 'both' && ePartSelect.value === 'theory')) {
+          maxEHours = tHours;
+        } else if (sType === 'practical' || (sType === 'both' && ePartSelect.value === 'practical')) {
+          maxEHours = pHours;
+        }
+
+        eHoursSelect.innerHTML = '';
+        for (let i = 1; i <= maxEHours; i++) {
+          eHoursSelect.innerHTML += `<option value="${i}">${i} ${i==1?'ساعة':'ساعات'}</option>`;
+        }
+        // اجعل الاختيار الافتراضي هو الحد الأقصى للساعات
+        eHoursSelect.value = maxEHours;
+      } else {
+        eHoursField.classList.add('hidden');
+      }
+    }
+
+
+    addBtn.addEventListener('click', function() {
+      if(!currentCourseData) {
         alert('الرجاء اختيار المقرر أولاً');
         return;
       }
 
-      const courseData = allCourses.find(c => 
-        c['الوحدة التدريبية'] === unitSelect.value &&
-        c['المرحلة التدريبية'] === stageSelect.value &&
-        c['التخصص'] === majorSelect.value &&
-        c['المقرر'] === selectedCourseName
-      );
-      
-      const originalTheory = parseFloat(courseData['محاضرة']) || 0;
-      const originalPractical = parseFloat(courseData['عملي']) || 0;
+      const selectedCourseName = courseSelect.value;
+      const sType = scheduleType.value;
+      const mode = modeSelect.value;
+      const ePart = ePartSelect.value; 
+      const eSelectedHours = parseInt(eHoursSelect.value) || 0;
+
+      const originalTheory = parseFloat(currentCourseData['محاضرة']) || 0;
+      const originalPractical = parseFloat(currentCourseData['عملي']) || 0;
 
       let displayTheory = 0;
       let displayPractical = 0;
@@ -362,64 +429,45 @@
       let modeText = "";
       let expText = "";
 
-      // 1. إذا تم إسناد كامل المقرر للمدرب
+      // تحديد الساعات الأساسية بناء على الإسناد
       if (sType === 'both') {
-        if (mode === 'traditional') {
-          displayTheory = originalTheory;
-          displayPractical = originalPractical;
-          calculatedHours = originalTheory + (originalPractical * PRACTICAL_FACTOR);
-          modeText = "مقرر كامل (تقليدي)";
-          expText = `الجدولة لكامل المقرر: النظري (${originalTheory}) + العملي (${originalPractical} × ${PRACTICAL_FACTOR}) = ${calculatedHours.toFixed(2)} ساعة.`;
-        } else {
-          if (ePart === 'theory') {
-            displayElearning = originalTheory; 
-            displayPractical = originalPractical; 
-            modeText = mode === 'distance' ? "مقرر كامل (عن بعد للنظري)" : "مقرر كامل (ذاتي للنظري)";
-          } else {
-            displayElearning = originalPractical; 
-            displayTheory = originalTheory; 
-            modeText = mode === 'distance' ? "مقرر كامل (عن بعد للعملي)" : "مقرر كامل (ذاتي للعملي)";
-          }
-          let physicalHours = displayTheory + (displayPractical * PRACTICAL_FACTOR);
-          let eHoursCalc = mode === 'distance' ? displayElearning : 0; 
-          calculatedHours = physicalHours + eHoursCalc;
-          let eReason = mode === 'distance' ? `يحتسب كاملاً (${displayElearning})` : `لا يحتسب ساعات للتدريب الذاتي (0)`;
-          expText = `الجدولة لكامل المقرر: الشق المختار إلكتروني و${eReason}. الساعات الحضورية المتبقية: نظري (${displayTheory}) + عملي (${displayPractical} × ${PRACTICAL_FACTOR}). الإجمالي = ${calculatedHours.toFixed(2)} ساعة.`;
-        }
-      } 
-      // 2. إذا تم إسناد الشق النظري فقط للمدرب
-      else if (sType === 'theory') {
-        if (mode === 'traditional') {
-          displayTheory = originalTheory;
-          calculatedHours = originalTheory;
-          modeText = "نظري فقط (تقليدي)";
-          expText = `جدولة النظري فقط: تم احتساب الساعات النظرية (${originalTheory}) = ${calculatedHours.toFixed(2)} ساعة.`;
-        } else {
-          displayElearning = originalTheory;
-          let eHoursCalc = mode === 'distance' ? displayElearning : 0;
-          calculatedHours = eHoursCalc;
-          let modeName = mode === 'distance' ? 'عن بعد' : 'ذاتي';
-          modeText = `نظري فقط (${modeName})`;
-          let eReason = mode === 'distance' ? `يحتسب كاملاً (${displayElearning})` : `لا يحتسب ساعات للتدريب الذاتي (0)`;
-          expText = `جدولة النظري فقط (${modeName}): الشق النظري مسند إلكترونياً و${eReason}. الإجمالي = ${calculatedHours.toFixed(2)} ساعة.`;
-        }
+        displayTheory = originalTheory;
+        displayPractical = originalPractical;
+      } else if (sType === 'theory') {
+        displayTheory = originalTheory;
+        displayPractical = 0;
+      } else if (sType === 'practical') {
+        displayTheory = 0;
+        displayPractical = originalPractical;
       }
-      // 3. إذا تم إسناد الشق العملي فقط للمدرب
-      else if (sType === 'practical') {
-        if (mode === 'traditional') {
-          displayPractical = originalPractical;
-          calculatedHours = originalPractical * PRACTICAL_FACTOR;
-          modeText = "عملي فقط (تقليدي)";
-          expText = `جدولة العملي فقط: تم احتساب الساعات العملية (${originalPractical} × ${PRACTICAL_FACTOR}) = ${calculatedHours.toFixed(2)} ساعة.`;
+
+      // حساب الساعات الإلكترونية والخصم من الحضوري
+      if (mode !== 'traditional') {
+        displayElearning = eSelectedHours;
+        
+        let targetPart = '';
+        if (sType === 'theory') targetPart = 'theory';
+        else if (sType === 'practical') targetPart = 'practical';
+        else if (sType === 'both') targetPart = ePart; // بناء على اختيار الشق
+
+        if (targetPart === 'theory') {
+          displayTheory -= displayElearning;
+          modeText = sType === 'both' ? (mode === 'distance' ? "مدمج عن بعد (نظري)" : "مدمج ذاتي (نظري)") : (mode === 'distance' ? "نظري عن بعد" : "نظري ذاتي");
         } else {
-          displayElearning = originalPractical;
-          let eHoursCalc = mode === 'distance' ? displayElearning : 0;
-          calculatedHours = eHoursCalc;
-          let modeName = mode === 'distance' ? 'عن بعد' : 'ذاتي';
-          modeText = `عملي فقط (${modeName})`;
-          let eReason = mode === 'distance' ? `يحتسب كاملاً (${displayElearning})` : `لا يحتسب ساعات للتدريب الذاتي (0)`;
-          expText = `جدولة العملي فقط (${modeName}): الشق العملي مسند إلكترونياً و${eReason}. الإجمالي = ${calculatedHours.toFixed(2)} ساعة.`;
+          displayPractical -= displayElearning;
+          modeText = sType === 'both' ? (mode === 'distance' ? "مدمج عن بعد (عملي)" : "مدمج ذاتي (عملي)") : (mode === 'distance' ? "عملي عن بعد" : "عملي ذاتي");
         }
+
+        let eHoursCalc = mode === 'distance' ? displayElearning : 0; 
+        calculatedHours = (displayTheory * 1) + (displayPractical * PRACTICAL_FACTOR) + eHoursCalc;
+
+        let eReason = mode === 'distance' ? `يُحسب النمط عن بعد بالكامل (${displayElearning})` : `لا يُحسب ساعات للنمط الذاتي (0)`;
+        expText = `النمط (${modeText}): حضور نظري (${displayTheory}) + حضور عملي (${displayPractical} × ${PRACTICAL_FACTOR}) | الإلكتروني: ${displayElearning} ساعة (${eReason}). الإجمالي = ${calculatedHours.toFixed(2)} ساعة.`;
+
+      } else {
+        modeText = sType === 'both' ? "تقليدي (كامل المقرر)" : (sType === 'theory' ? "تقليدي (نظري فقط)" : "تقليدي (عملي فقط)");
+        calculatedHours = (displayTheory * 1) + (displayPractical * PRACTICAL_FACTOR);
+        expText = `احتساب تقليدي: حضور نظري (${displayTheory}) + حضور عملي (${displayPractical} × ${PRACTICAL_FACTOR}). الإجمالي = ${calculatedHours.toFixed(2)} ساعة.`;
       }
 
       schedule.push({
@@ -461,7 +509,6 @@
             <td><button class="btn-delete" onclick="removeCourse(${item.id})">حذف</button></td>
           </tr>
         `;
-
         explanationList.innerHTML += `<li><strong>${item.name}</strong>: ${item.expText}</li>`;
       });
 
