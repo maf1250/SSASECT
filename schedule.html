@@ -258,7 +258,6 @@
     const totalHoursEl = document.getElementById('totalHours');
     const explanationList = document.getElementById('explanationList');
 
-    // قراءة البيانات
     Papa.parse("courses.csv", {
       download: true,
       header: true,
@@ -271,7 +270,6 @@
       }
     });
 
-    // التسلسل المنطقي للقوائم (وحدة -> مرحلة -> تخصص -> مقرر)
     function populateUnits() {
       const units = [...new Set(allCourses.map(course => course['الوحدة التدريبية']))].filter(Boolean);
       unitSelect.innerHTML = '<option value="">-- اختر الوحدة التدريبية --</option>';
@@ -326,7 +324,6 @@
       eHoursField.classList.add('hidden');
     }
 
-    // المنطق الذكي عند اختيار المقرر
     courseSelect.addEventListener('change', function() {
       if(!this.value) {
         resetCourseConfig();
@@ -345,17 +342,13 @@
 
       scheduleType.innerHTML = '';
       
-      // تحليل طبيعة المقرر
       if (tHours > 0 && pHours > 0) {
-        // مقرر بشقين
         scheduleType.innerHTML += `<option value="both">نظري وعملي (كامل المقرر)</option>`;
         scheduleType.innerHTML += `<option value="theory">الشق النظري فقط</option>`;
         scheduleType.innerHTML += `<option value="practical">الشق العملي فقط</option>`;
       } else if (tHours > 0 && pHours === 0) {
-        // نظري فقط
         scheduleType.innerHTML += `<option value="theory">نظري فقط</option>`;
       } else if (tHours === 0 && pHours > 0) {
-        // عملي فقط
         scheduleType.innerHTML += `<option value="practical">عملي فقط</option>`;
       }
 
@@ -377,14 +370,12 @@
       const sType = scheduleType.value;
       const mode = modeSelect.value;
 
-      // 1. التحكم بظهور حقل "الشق المحول لإلكتروني"
       if (mode !== 'traditional' && sType === 'both' && tHours > 0 && pHours > 0) {
         ePartField.classList.remove('hidden');
       } else {
         ePartField.classList.add('hidden');
       }
 
-      // 2. التحكم بظهور وبناء قائمة "عدد الساعات الإلكترونية"
       if (mode !== 'traditional') {
         eHoursField.classList.remove('hidden');
         let maxEHours = 0;
@@ -399,7 +390,6 @@
         for (let i = 1; i <= maxEHours; i++) {
           eHoursSelect.innerHTML += `<option value="${i}">${i} ${i==1?'ساعة':'ساعات'}</option>`;
         }
-        // اجعل الاختيار الافتراضي هو الحد الأقصى للساعات
         eHoursSelect.value = maxEHours;
       } else {
         eHoursField.classList.add('hidden');
@@ -429,7 +419,6 @@
       let modeText = "";
       let expText = "";
 
-      // تحديد الساعات الأساسية بناء على الإسناد
       if (sType === 'both') {
         displayTheory = originalTheory;
         displayPractical = originalPractical;
@@ -441,14 +430,13 @@
         displayPractical = originalPractical;
       }
 
-      // حساب الساعات الإلكترونية والخصم من الحضوري
       if (mode !== 'traditional') {
         displayElearning = eSelectedHours;
         
         let targetPart = '';
         if (sType === 'theory') targetPart = 'theory';
         else if (sType === 'practical') targetPart = 'practical';
-        else if (sType === 'both') targetPart = ePart; // بناء على اختيار الشق
+        else if (sType === 'both') targetPart = ePart;
 
         if (targetPart === 'theory') {
           displayTheory -= displayElearning;
@@ -458,10 +446,25 @@
           modeText = sType === 'both' ? (mode === 'distance' ? "مدمج عن بعد (عملي)" : "مدمج ذاتي (عملي)") : (mode === 'distance' ? "عملي عن بعد" : "عملي ذاتي");
         }
 
-        let eHoursCalc = mode === 'distance' ? displayElearning : 0; 
+        // هنا تم التعديل لمعالجة الشق الإلكتروني للعملي
+        let eHoursCalc = 0;
+        let eReason = "";
+        
+        if (mode === 'distance') {
+          if (targetPart === 'theory') {
+            eHoursCalc = displayElearning; // يُضرب في 1
+            eReason = `يُحسب عن بعد بالكامل كنظري (${displayElearning})`;
+          } else {
+            eHoursCalc = displayElearning * PRACTICAL_FACTOR; // يُضرب في معامل العملي
+            eReason = `يُحسب عن بعد بمعامل العملي (${displayElearning} × ${PRACTICAL_FACTOR})`;
+          }
+        } else {
+          // نمط ذاتي لا يُحسب
+          eHoursCalc = 0;
+          eReason = `لا يُحسب ساعات للنمط الذاتي (0)`;
+        }
+        
         calculatedHours = (displayTheory * 1) + (displayPractical * PRACTICAL_FACTOR) + eHoursCalc;
-
-        let eReason = mode === 'distance' ? `يُحسب النمط عن بعد بالكامل (${displayElearning})` : `لا يُحسب ساعات للنمط الذاتي (0)`;
         expText = `النمط (${modeText}): حضور نظري (${displayTheory}) + حضور عملي (${displayPractical} × ${PRACTICAL_FACTOR}) | الإلكتروني: ${displayElearning} ساعة (${eReason}). الإجمالي = ${calculatedHours.toFixed(2)} ساعة.`;
 
       } else {
