@@ -31,12 +31,15 @@
                   linear-gradient(180deg, #f5fbfb 0%, #eef7f6 100%);
       color: var(--text);
       min-height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
     .container {
       position: relative;
       z-index: 1;
       width: min(1180px, calc(100% - 32px));
-      margin: 28px auto 40px;
+      margin: 28px auto 20px;
+      flex-grow: 1;
     }
     .card {
       background: rgba(255, 255, 255, 0.88);
@@ -96,6 +99,20 @@
     .result-box ul { margin: 0; padding-right: 20px; line-height: 1.8; }
 
     .hidden { display: none !important; }
+    
+    footer {
+      text-align: center;
+      padding: 20px;
+      margin-top: 20px;
+      padding-bottom: 40px;
+    }
+    .visitor-text {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
   </style>
 </head>
 <body>
@@ -106,8 +123,8 @@
         <p>قم بتصفية المقررات ثم اختر نمط التنفيذ للإضافة إلى الجدول.</p>
       </div>
 
+      <!-- القسم العلوي: تصفيات الأقسام والمراحل -->
       <div class="form-grid">
-        <!-- الحقول الجديدة للتصفية -->
         <div class="field">
           <label for="unitSelect">الوحدة التدريبية</label>
           <select id="unitSelect">
@@ -128,16 +145,17 @@
             <option value="">اختر المرحلة أولاً</option>
           </select>
         </div>
+      </div>
 
+      <!-- القسم السفلي: إعدادات المقرر وإضافته -->
+      <div class="form-grid" style="border-top: 1px solid var(--border); padding-top: 18px; margin-top: 18px;">
         <div class="field">
           <label for="courseSelect">المقرر التدريبي</label>
           <select id="courseSelect" disabled>
             <option value="">اختر التخصص أولاً</option>
           </select>
         </div>
-      </div>
-
-      <div class="form-grid" style="border-top: 1px solid var(--border); padding-top: 18px; margin-top: 18px;">
+        
         <div class="field">
           <label for="modeSelect">نوع الجدولة / النمط</label>
           <select id="modeSelect">
@@ -196,12 +214,17 @@
     </div>
   </main>
 
+  <!-- قسم العداد أسفل الصفحة -->
+  <footer>
+    <span class="visitor-text">إجمالي عدد الزيارات</span>
+    <img src="https://visitor-badge.laobi.icu/badge?page_id=https%3A%2F%2Fmaf1250.github.io%2FSSASECT%2Fschedule" alt="visitor badge"/>
+  </footer>
+
   <script>
     const PRACTICAL_FACTOR = 0.66667;
     let allCourses = []; 
     let schedule = []; 
 
-    // تعريف متغيرات الحقول
     const unitSelect = document.getElementById('unitSelect');
     const stageSelect = document.getElementById('stageSelect');
     const majorSelect = document.getElementById('majorSelect');
@@ -217,7 +240,6 @@
     const totalHoursEl = document.getElementById('totalHours');
     const explanationList = document.getElementById('explanationList');
 
-    // إظهار/إخفاء حقل اختيار الشق الإلكتروني
     modeSelect.addEventListener('change', function() {
       if (this.value === 'traditional') {
         ePartField.classList.add('hidden');
@@ -226,22 +248,19 @@
       }
     });
 
-    // قراءة ملف الإكسل (CSV)
     Papa.parse("courses.csv", {
       download: true,
       header: true,
       complete: function(results) {
         allCourses = results.data.filter(row => row['المقرر']); 
-        populateUnits(); // استدعاء دالة تعبئة الوحدات أولاً
+        populateUnits(); 
       },
       error: function() {
         unitSelect.innerHTML = '<option value="">حدث خطأ في تحميل ملف الخطط</option>';
       }
     });
 
-    // 1. تعبئة الوحدات التدريبية
     function populateUnits() {
-      // جلب الوحدات الفريدة وتجاهل الفارغ منها
       const units = [...new Set(allCourses.map(course => course['الوحدة التدريبية']))].filter(Boolean);
       unitSelect.innerHTML = '<option value="">-- اختر الوحدة التدريبية --</option>';
       units.forEach(unit => {
@@ -249,11 +268,9 @@
       });
     }
 
-    // 2. عند تغيير الوحدة التدريبية -> تعبئة المراحل
     unitSelect.addEventListener('change', function() {
       const selectedUnit = this.value;
       
-      // تصفير الحقول التي أسفلها
       stageSelect.innerHTML = '<option value="">اختر الوحدة أولاً</option>';
       stageSelect.disabled = true;
       majorSelect.innerHTML = '<option value="">اختر المرحلة أولاً</option>';
@@ -273,12 +290,10 @@
       stageSelect.disabled = false;
     });
 
-    // 3. عند تغيير المرحلة التدريبية -> تعبئة التخصصات
     stageSelect.addEventListener('change', function() {
       const selectedUnit = unitSelect.value;
       const selectedStage = this.value;
 
-      // تصفير الحقول التي أسفلها
       majorSelect.innerHTML = '<option value="">اختر المرحلة أولاً</option>';
       majorSelect.disabled = true;
       courseSelect.innerHTML = '<option value="">اختر التخصص أولاً</option>';
@@ -300,13 +315,11 @@
       majorSelect.disabled = false;
     });
 
-    // 4. عند تغيير التخصص -> تعبئة المقررات
     majorSelect.addEventListener('change', function() {
       const selectedUnit = unitSelect.value;
       const selectedStage = stageSelect.value;
       const selectedMajor = this.value;
 
-      // تصفير حقل المقررات
       courseSelect.innerHTML = '<option value="">اختر التخصص أولاً</option>';
       courseSelect.disabled = true;
 
@@ -325,8 +338,6 @@
       courseSelect.disabled = false;
     });
 
-
-    // إضافة المقرر للجدول
     addBtn.addEventListener('click', function() {
       const selectedCourseName = courseSelect.value;
       const mode = modeSelect.value;
@@ -337,7 +348,6 @@
         return;
       }
 
-      // البحث عن المقرر باستخدام الوحدة والمرحلة والتخصص واسم المقرر لضمان الدقة
       const courseData = allCourses.find(c => 
         c['الوحدة التدريبية'] === unitSelect.value &&
         c['المرحلة التدريبية'] === stageSelect.value &&
@@ -392,7 +402,6 @@
       renderTable();
     });
 
-    // رسم الجدول
     function renderTable() {
       scheduleBody.innerHTML = '';
       if(schedule.length === 0) {
