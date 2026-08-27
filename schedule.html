@@ -5,15 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>بناء الجدول التدريبي</title>
   
-  <!-- خطوط جوجل (Cairo) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
-  
-  <!-- مكتبة PapaParse لقراءة ملفات CSV -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
-  <!-- أكواد التصميم CSS (نفس تصميمك مع إضافات للجدول) -->
   <style>
     :root {
       --primary: #0f766e;
@@ -26,8 +22,6 @@
       --white: #ffffff;
       --shadow: 0 20px 60px rgba(10, 55, 59, 0.12);
       --radius-xl: 28px;
-      --radius-lg: 20px;
-      --radius-md: 14px;
     }
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; }
@@ -99,6 +93,9 @@
     }
     .result-box h3 { margin: 0 0 10px 0; color: var(--accent); }
     .result-box ul { margin: 0; padding-right: 20px; line-height: 1.8; }
+
+    /* إخفاء العناصر */
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
@@ -106,7 +103,7 @@
     <div class="card">
       <div class="section-head">
         <h2>بناء الجدول التدريبي للمدرب</h2>
-        <p>اختر التخصص ثم المقرر ليتم جلب الساعات آلياً، ثم أضفه للجدول لحساب النصاب النهائي.</p>
+        <p>اختر المقرر ونمط التنفيذ. إذا اخترت النمط المدمج، حدد أي شق سيتم تنفيذه إلكترونياً.</p>
       </div>
 
       <div class="form-grid">
@@ -125,11 +122,20 @@
         </div>
 
         <div class="field">
-          <label for="modeSelect">نمط التنفيذ للشق الإلكتروني (إن وُجد)</label>
+          <label for="modeSelect">نوع الجدولة / النمط</label>
           <select id="modeSelect">
             <option value="traditional">تقليدي (حضوري بالكامل)</option>
             <option value="distance">مدمج - عن بعد</option>
             <option value="self">مدمج - ذاتي</option>
+          </select>
+        </div>
+
+        <!-- هذا الحقل سيظهر فقط عند اختيار "مدمج" -->
+        <div class="field hidden" id="ePartField">
+          <label for="ePartSelect">الشق المحوّل لإلكتروني</label>
+          <select id="ePartSelect">
+            <option value="theory">الشق النظري</option>
+            <option value="practical">الشق العملي</option>
           </select>
         </div>
 
@@ -149,10 +155,10 @@
           <thead>
             <tr>
               <th>المقرر</th>
-              <th>نمط التنفيذ</th>
-              <th>نظري</th>
-              <th>عملي</th>
-              <th>إلكتروني</th>
+              <th>النمط</th>
+              <th>حضور (نظري)</th>
+              <th>حضور (عملي)</th>
+              <th>إلكتروني (مدمج)</th>
               <th>الاحتساب (ساعات)</th>
               <th>حذف</th>
             </tr>
@@ -166,9 +172,9 @@
       </div>
 
       <div class="result-box" id="resultBox" style="display: none;">
-        <h3>إجمالي النصاب التدريبي: <span id="totalHours">0</span> ساعة</h3>
+        <h3>إجمالي النصاب التدريبي: <span id="totalHours" style="font-weight:900;">0</span> ساعة</h3>
         <hr style="border: 0; border-top: 1px solid var(--border); margin: 15px 0;">
-        <strong>شرح تفصيلي لآلية الحساب في هذا الجدول:</strong>
+        <strong>شرح تفصيلي لآلية الحساب:</strong>
         <ul id="explanationList"></ul>
       </div>
     </div>
@@ -176,24 +182,34 @@
 
   <script>
     const PRACTICAL_FACTOR = 0.66667;
-    let allCourses = []; // لتخزين البيانات القادمة من الـ CSV
-    let schedule = []; // لتخزين مقررات الجدول الحالي
+    let allCourses = []; 
+    let schedule = []; 
 
     const majorSelect = document.getElementById('majorSelect');
     const courseSelect = document.getElementById('courseSelect');
     const modeSelect = document.getElementById('modeSelect');
+    const ePartField = document.getElementById('ePartField');
+    const ePartSelect = document.getElementById('ePartSelect');
     const addBtn = document.getElementById('addBtn');
     const scheduleBody = document.getElementById('scheduleBody');
     const resultBox = document.getElementById('resultBox');
     const totalHoursEl = document.getElementById('totalHours');
     const explanationList = document.getElementById('explanationList');
 
-    // 1. قراءة ملف الـ CSV عند فتح الصفحة
+    // إظهار/إخفاء حقل اختيار الشق الإلكتروني بناء على نمط التنفيذ
+    modeSelect.addEventListener('change', function() {
+      if (this.value === 'traditional') {
+        ePartField.classList.add('hidden');
+      } else {
+        ePartField.classList.remove('hidden');
+      }
+    });
+
     Papa.parse("courses.csv", {
       download: true,
       header: true,
       complete: function(results) {
-        allCourses = results.data.filter(row => row['اسم المقرر']); // تجاهل الصفوف الفارغة
+        allCourses = results.data.filter(row => row['اسم المقرر']); 
         populateMajors();
       },
       error: function() {
@@ -201,18 +217,14 @@
       }
     });
 
-    // 2. تعبئة قائمة التخصصات (بدون تكرار)
     function populateMajors() {
       const majors = [...new Set(allCourses.map(course => course['التخصص']))];
       majorSelect.innerHTML = '<option value="">-- اختر التخصص --</option>';
       majors.forEach(major => {
-        if(major) {
-          majorSelect.innerHTML += `<option value="${major}">${major}</option>`;
-        }
+        if(major) majorSelect.innerHTML += `<option value="${major}">${major}</option>`;
       });
     }
 
-    // 3. تعبئة قائمة المقررات عند تغيير التخصص
     majorSelect.addEventListener('change', function() {
       const selectedMajor = this.value;
       if (!selectedMajor) {
@@ -220,7 +232,6 @@
         courseSelect.disabled = true;
         return;
       }
-      
       const filteredCourses = allCourses.filter(c => c['التخصص'] === selectedMajor);
       courseSelect.innerHTML = '<option value="">-- اختر المقرر --</option>';
       filteredCourses.forEach(course => {
@@ -229,62 +240,70 @@
       courseSelect.disabled = false;
     });
 
-    // 4. إضافة المقرر للجدول
     addBtn.addEventListener('click', function() {
       const selectedCourseName = courseSelect.value;
       const mode = modeSelect.value;
+      const ePart = ePartSelect.value; 
 
       if(!selectedCourseName) {
         alert('الرجاء اختيار المقرر أولاً');
         return;
       }
 
-      // البحث عن بيانات المقرر من الملف
       const courseData = allCourses.find(c => c['اسم المقرر'] === selectedCourseName);
       
-      const theory = parseFloat(courseData['مح']) || 0;
-      const practical = parseFloat(courseData['عم']) || 0;
-      const elearning = parseFloat(courseData['إلكتروني']) || 0;
+      const originalTheory = parseFloat(courseData['نظري']) || 0;
+      const originalPractical = parseFloat(courseData['عملي']) || 0;
 
-      // حساب ساعات المقرر بناء على النمط
+      let displayTheory = originalTheory;
+      let displayPractical = originalPractical;
+      let displayElearning = 0;
       let calculatedHours = 0;
-      let modeText = "";
-      
-      const practicalCalc = practical * PRACTICAL_FACTOR;
+      let modeText = "تقليدي";
+      let expText = "";
 
-      if(mode === 'traditional') {
-        // تقليدي: لا يوجد الكتروني، تحسب النظري والعملي (نعتبر الالكتروني صفراً أو يعامل كنظري حسب خطتك، هنا نتجاهله)
-        calculatedHours = theory + practicalCalc;
-        modeText = "تقليدي";
-      } else if (mode === 'distance') {
-        // عن بعد: النظري + العملي بمعامله + الالكتروني بالكامل
-        calculatedHours = theory + practicalCalc + elearning;
-        modeText = "عن بعد";
-      } else if (mode === 'self') {
-        // ذاتي: النظري + العملي بمعامله + (الالكتروني لا يحسب)
-        calculatedHours = theory + practicalCalc;
-        modeText = "تدريب ذاتي";
+      if (mode === 'traditional') {
+        calculatedHours = originalTheory + (originalPractical * PRACTICAL_FACTOR);
+        expText = `احتساب تقليدي: النظري (${originalTheory}) + العملي (${originalPractical} × ${PRACTICAL_FACTOR}) = ${calculatedHours.toFixed(2)} ساعة.`;
+      } 
+      else {
+        // إذا كان التنفيذ مدمجاً، نحدد أي شق هو الذي سيتحول لإلكتروني
+        if (ePart === 'theory') {
+          displayElearning = originalTheory; // النظري أصبح إلكتروني
+          displayTheory = 0; // تم تصفير النظري الحضوري
+          modeText = mode === 'distance' ? "عن بعد (للنظري)" : "ذاتي (للنظري)";
+        } else {
+          displayElearning = originalPractical; // العملي أصبح إلكتروني
+          displayPractical = 0; // تم تصفير العملي الحضوري
+          modeText = mode === 'distance' ? "عن بعد (للعملي)" : "ذاتي (للعملي)";
+        }
+
+        // حساب الساعات
+        let physicalHours = displayTheory + (displayPractical * PRACTICAL_FACTOR);
+        let eHoursCalc = mode === 'distance' ? displayElearning : 0; // ذاتي = 0, عن بعد = تحسب كاملة
+        calculatedHours = physicalHours + eHoursCalc;
+
+        // صياغة الشرح
+        let eReason = mode === 'distance' ? `يحتسب كاملاً (${displayElearning})` : `لا يحتسب ساعات للتدريب الذاتي (0)`;
+        expText = `نمط ${modeText}: تم تحويل الشق المختار لساعات إلكترونية (${displayElearning} ساعة) و${eReason}. الساعات الحضورية المتبقية: نظري (${displayTheory}) + عملي (${displayPractical} × ${PRACTICAL_FACTOR}). الإجمالي = ${calculatedHours.toFixed(2)} ساعة.`;
       }
 
-      // إضافة للجدول البرمجي
       schedule.push({
         id: Date.now(),
         name: selectedCourseName,
         modeText: modeText,
-        modeVal: mode,
-        theory: theory,
-        practical: practical,
-        elearning: elearning,
-        calculated: calculatedHours
+        displayTheory: displayTheory,
+        displayPractical: displayPractical,
+        displayElearning: displayElearning,
+        calculated: calculatedHours,
+        expText: expText
       });
 
       renderTable();
     });
 
-    // 5. رسم الجدول وتحديث النتائج
     function renderTable() {
       scheduleBody.innerHTML = '';
-      
       if(schedule.length === 0) {
         scheduleBody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--muted);">لم يتم إضافة مقررات بعد</td></tr>';
         resultBox.style.display = 'none';
@@ -297,36 +316,25 @@
       schedule.forEach(item => {
         total += item.calculated;
         
-        // رسم الصف
         scheduleBody.innerHTML += `
           <tr>
             <td><strong>${item.name}</strong></td>
             <td>${item.modeText}</td>
-            <td>${item.theory}</td>
-            <td>${item.practical}</td>
-            <td>${item.elearning}</td>
-            <td style="font-weight:bold; color:var(--primary);">${item.calculated.toFixed(2)}</td>
+            <td>${item.displayTheory}</td>
+            <td>${item.displayPractical}</td>
+            <td style="color:var(--primary); font-weight:bold;">${item.displayElearning}</td>
+            <td style="font-weight:900; color:var(--accent); background:#f4fbfa;">${item.calculated.toFixed(2)}</td>
             <td><button class="btn-delete" onclick="removeCourse(${item.id})">حذف</button></td>
           </tr>
         `;
 
-        // إضافة الشرح لكل مقرر
-        let expText = `<strong>${item.name} (${item.modeText}):</strong> `;
-        if(item.modeVal === 'distance') {
-          expText += `تم احتساب النظري (${item.theory}) + العملي (${item.practical} × ${PRACTICAL_FACTOR}) + الإلكتروني (${item.elearning} عن بعد) = ${item.calculated.toFixed(2)} ساعة.`;
-        } else if (item.modeVal === 'self') {
-          expText += `تم احتساب النظري (${item.theory}) + العملي (${item.practical} × ${PRACTICAL_FACTOR}) + الإلكتروني (0 لأن التدريب الذاتي لا يحتسب) = ${item.calculated.toFixed(2)} ساعة.`;
-        } else {
-          expText += `تم احتساب النظري (${item.theory}) + العملي (${item.practical} × ${PRACTICAL_FACTOR}) = ${item.calculated.toFixed(2)} ساعة.`;
-        }
-        explanationList.innerHTML += `<li>${expText}</li>`;
+        explanationList.innerHTML += `<li><strong>${item.name}</strong>: ${item.expText}</li>`;
       });
 
       totalHoursEl.innerText = total.toFixed(2);
       resultBox.style.display = 'block';
     }
 
-    // 6. حذف مقرر من الجدول
     function removeCourse(id) {
       schedule = schedule.filter(item => item.id !== id);
       renderTable();
