@@ -242,8 +242,8 @@
       // البحث عن بيانات المقرر من الملف
       const courseData = allCourses.find(c => c['اسم المقرر'] === selectedCourseName);
       
-      const theory = parseFloat(courseData['نظري']) || 0;
-      const practical = parseFloat(courseData['عملي']) || 0;
+      const theory = parseFloat(courseData['مح']) || 0;
+      const practical = parseFloat(courseData['عم']) || 0;
       const elearning = parseFloat(courseData['إلكتروني']) || 0;
 
       // حساب ساعات المقرر بناء على النمط
