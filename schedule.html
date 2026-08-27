@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>بناء الجدول التدريبي</title>
+  
+  <!-- خطوط جوجل (Cairo) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- مكتبة PapaParse لقراءة ملفات CSV -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+  <!-- أكواد التصميم CSS (نفس تصميمك مع إضافات للجدول) -->
+  <style>
+    :root {
+      --primary: #0f766e;
+      --primary-2: #159e9c;
+      --primary-3: #dff6f3;
+      --accent: #0b5f59;
+      --text: #153133;
+      --muted: #5f6f72;
+      --border: #d7e7e7;
+      --white: #ffffff;
+      --shadow: 0 20px 60px rgba(10, 55, 59, 0.12);
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+      --radius-md: 14px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: 'Cairo', sans-serif;
+      background: radial-gradient(circle at top right, rgba(21, 158, 156, 0.15), transparent 25%),
+                  linear-gradient(180deg, #f5fbfb 0%, #eef7f6 100%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    .container {
+      position: relative;
+      z-index: 1;
+      width: min(1180px, calc(100% - 32px));
+      margin: 28px auto 40px;
+    }
+    .card {
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.65);
+      box-shadow: var(--shadow);
+      border-radius: var(--radius-xl);
+      padding: 24px;
+      margin-bottom: 22px;
+    }
+    .section-head h2 { margin: 0 0 8px; font-size: 24px; }
+    .section-head p { margin: 0; color: var(--muted); }
+    
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 18px;
+      margin-top: 18px;
+      align-items: end;
+    }
+    .field { display: flex; flex-direction: column; gap: 8px; }
+    label { font-weight: 700; font-size: 15px; }
+    select, input {
+      width: 100%; border: 1px solid var(--border); background: #fff;
+      min-height: 52px; border-radius: 16px; padding: 12px 16px;
+      font-family: inherit; font-size: 15px; color: var(--text); outline: none; transition: 0.2s ease;
+    }
+    select:focus, input:focus { border-color: var(--primary-2); box-shadow: 0 0 0 4px rgba(21, 158, 156, 0.12); }
+    
+    .btn-add {
+      background: linear-gradient(135deg, var(--primary), var(--primary-2));
+      color: white; border: none; min-height: 52px; border-radius: 16px;
+      font-weight: 700; font-size: 16px; font-family: inherit; cursor: pointer; transition: 0.2s ease;
+    }
+    .btn-add:hover { opacity: 0.9; transform: translateY(-2px); }
+
+    table {
+      width: 100%; border-collapse: collapse; margin-top: 20px;
+      background: #fff; border-radius: 16px; overflow: hidden;
+    }
+    th, td { padding: 14px; text-align: right; border-bottom: 1px solid var(--border); }
+    th { background: var(--primary-3); color: var(--accent); font-weight: 700; }
+    tr:last-child td { border-bottom: none; }
+    
+    .btn-delete {
+      background: #ffe3e3; color: #d62828; border: none; padding: 6px 12px;
+      border-radius: 8px; cursor: pointer; font-family: inherit; font-weight: 600;
+    }
+    
+    .result-box {
+      margin-top: 24px; padding: 20px;
+      background: linear-gradient(180deg, #f4fbfa 0%, #ecf8f6 100%);
+      border: 1px solid var(--primary-2); border-radius: 16px;
+    }
+    .result-box h3 { margin: 0 0 10px 0; color: var(--accent); }
+    .result-box ul { margin: 0; padding-right: 20px; line-height: 1.8; }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <div class="card">
+      <div class="section-head">
+        <h2>بناء الجدول التدريبي للمدرب</h2>
+        <p>اختر التخصص ثم المقرر ليتم جلب الساعات آلياً، ثم أضفه للجدول لحساب النصاب النهائي.</p>
+      </div>
+
+      <div class="form-grid">
+        <div class="field">
+          <label for="majorSelect">التخصص</label>
+          <select id="majorSelect">
+            <option value="">جاري تحميل التخصصات...</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="courseSelect">المقرر التدريبي</label>
+          <select id="courseSelect" disabled>
+            <option value="">اختر التخصص أولاً</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="modeSelect">نمط التنفيذ للشق الإلكتروني (إن وُجد)</label>
+          <select id="modeSelect">
+            <option value="traditional">تقليدي (حضوري بالكامل)</option>
+            <option value="distance">مدمج - عن بعد</option>
+            <option value="self">مدمج - ذاتي</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <button class="btn-add" id="addBtn">إضافة للجدول +</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-head">
+        <h2>الجدول التدريبي الحالي</h2>
+      </div>
+      
+      <div style="overflow-x: auto;">
+        <table id="scheduleTable">
+          <thead>
+            <tr>
+              <th>المقرر</th>
+              <th>نمط التنفيذ</th>
+              <th>نظري</th>
+              <th>عملي</th>
+              <th>إلكتروني</th>
+              <th>الاحتساب (ساعات)</th>
+              <th>حذف</th>
+            </tr>
+          </thead>
+          <tbody id="scheduleBody">
+            <tr>
+              <td colspan="7" style="text-align: center; color: var(--muted);">لم يتم إضافة مقررات بعد</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="result-box" id="resultBox" style="display: none;">
+        <h3>إجمالي النصاب التدريبي: <span id="totalHours">0</span> ساعة</h3>
+        <hr style="border: 0; border-top: 1px solid var(--border); margin: 15px 0;">
+        <strong>شرح تفصيلي لآلية الحساب في هذا الجدول:</strong>
+        <ul id="explanationList"></ul>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const PRACTICAL_FACTOR = 0.66667;
+    let allCourses = []; // لتخزين البيانات القادمة من الـ CSV
+    let schedule = []; // لتخزين مقررات الجدول الحالي
+
+    const majorSelect = document.getElementById('majorSelect');
+    const courseSelect = document.getElementById('courseSelect');
+    const modeSelect = document.getElementById('modeSelect');
+    const addBtn = document.getElementById('addBtn');
+    const scheduleBody = document.getElementById('scheduleBody');
+    const resultBox = document.getElementById('resultBox');
+    const totalHoursEl = document.getElementById('totalHours');
+    const explanationList = document.getElementById('explanationList');
+
+    // 1. قراءة ملف الـ CSV عند فتح الصفحة
+    Papa.parse("courses.csv", {
+      download: true,
+      header: true,
+      complete: function(results) {
+        allCourses = results.data.filter(row => row['اسم المقرر']); // تجاهل الصفوف الفارغة
+        populateMajors();
+      },
+      error: function() {
+        majorSelect.innerHTML = '<option value="">حدث خطأ في تحميل ملف courses.csv</option>';
+      }
+    });
+
+    // 2. تعبئة قائمة التخصصات (بدون تكرار)
+    function populateMajors() {
+      const majors = [...new Set(allCourses.map(course => course['التخصص']))];
+      majorSelect.innerHTML = '<option value="">-- اختر التخصص --</option>';
+      majors.forEach(major => {
+        if(major) {
+          majorSelect.innerHTML += `<option value="${major}">${major}</option>`;
+        }
+      });
+    }
+
+    // 3. تعبئة قائمة المقررات عند تغيير التخصص
+    majorSelect.addEventListener('change', function() {
+      const selectedMajor = this.value;
+      if (!selectedMajor) {
+        courseSelect.innerHTML = '<option value="">اختر التخصص أولاً</option>';
+        courseSelect.disabled = true;
+        return;
+      }
+      
+      const filteredCourses = allCourses.filter(c => c['التخصص'] === selectedMajor);
+      courseSelect.innerHTML = '<option value="">-- اختر المقرر --</option>';
+      filteredCourses.forEach(course => {
+        courseSelect.innerHTML += `<option value="${course['اسم المقرر']}">${course['اسم المقرر']}</option>`;
+      });
+      courseSelect.disabled = false;
+    });
+
+    // 4. إضافة المقرر للجدول
+    addBtn.addEventListener('click', function() {
+      const selectedCourseName = courseSelect.value;
+      const mode = modeSelect.value;
+
+      if(!selectedCourseName) {
+        alert('الرجاء اختيار المقرر أولاً');
+        return;
+      }
+
+      // البحث عن بيانات المقرر من الملف
+      const courseData = allCourses.find(c => c['اسم المقرر'] === selectedCourseName);
+      
+      const theory = parseFloat(courseData['نظري']) || 0;
+      const practical = parseFloat(courseData['عملي']) || 0;
+      const elearning = parseFloat(courseData['إلكتروني']) || 0;
+
+      // حساب ساعات المقرر بناء على النمط
+      let calculatedHours = 0;
+      let modeText = "";
+      
+      const practicalCalc = practical * PRACTICAL_FACTOR;
+
+      if(mode === 'traditional') {
+        // تقليدي: لا يوجد الكتروني، تحسب النظري والعملي (نعتبر الالكتروني صفراً أو يعامل كنظري حسب خطتك، هنا نتجاهله)
+        calculatedHours = theory + practicalCalc;
+        modeText = "تقليدي";
+      } else if (mode === 'distance') {
+        // عن بعد: النظري + العملي بمعامله + الالكتروني بالكامل
+        calculatedHours = theory + practicalCalc + elearning;
+        modeText = "عن بعد";
+      } else if (mode === 'self') {
+        // ذاتي: النظري + العملي بمعامله + (الالكتروني لا يحسب)
+        calculatedHours = theory + practicalCalc;
+        modeText = "تدريب ذاتي";
+      }
+
+      // إضافة للجدول البرمجي
+      schedule.push({
+        id: Date.now(),
+        name: selectedCourseName,
+        modeText: modeText,
+        modeVal: mode,
+        theory: theory,
+        practical: practical,
+        elearning: elearning,
+        calculated: calculatedHours
+      });
+
+      renderTable();
+    });
+
+    // 5. رسم الجدول وتحديث النتائج
+    function renderTable() {
+      scheduleBody.innerHTML = '';
+      
+      if(schedule.length === 0) {
+        scheduleBody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--muted);">لم يتم إضافة مقررات بعد</td></tr>';
+        resultBox.style.display = 'none';
+        return;
+      }
+
+      let total = 0;
+      explanationList.innerHTML = '';
+
+      schedule.forEach(item => {
+        total += item.calculated;
+        
+        // رسم الصف
+        scheduleBody.innerHTML += `
+          <tr>
+            <td><strong>${item.name}</strong></td>
+            <td>${item.modeText}</td>
+            <td>${item.theory}</td>
+            <td>${item.practical}</td>
+            <td>${item.elearning}</td>
+            <td style="font-weight:bold; color:var(--primary);">${item.calculated.toFixed(2)}</td>
+            <td><button class="btn-delete" onclick="removeCourse(${item.id})">حذف</button></td>
+          </tr>
+        `;
+
+        // إضافة الشرح لكل مقرر
+        let expText = `<strong>${item.name} (${item.modeText}):</strong> `;
+        if(item.modeVal === 'distance') {
+          expText += `تم احتساب النظري (${item.theory}) + العملي (${item.practical} × ${PRACTICAL_FACTOR}) + الإلكتروني (${item.elearning} عن بعد) = ${item.calculated.toFixed(2)} ساعة.`;
+        } else if (item.modeVal === 'self') {
+          expText += `تم احتساب النظري (${item.theory}) + العملي (${item.practical} × ${PRACTICAL_FACTOR}) + الإلكتروني (0 لأن التدريب الذاتي لا يحتسب) = ${item.calculated.toFixed(2)} ساعة.`;
+        } else {
+          expText += `تم احتساب النظري (${item.theory}) + العملي (${item.practical} × ${PRACTICAL_FACTOR}) = ${item.calculated.toFixed(2)} ساعة.`;
+        }
+        explanationList.innerHTML += `<li>${expText}</li>`;
+      });
+
+      totalHoursEl.innerText = total.toFixed(2);
+      resultBox.style.display = 'block';
+    }
+
+    // 6. حذف مقرر من الجدول
+    function removeCourse(id) {
+      schedule = schedule.filter(item => item.id !== id);
+      renderTable();
+    }
+  </script>
+</body>
+</html>
