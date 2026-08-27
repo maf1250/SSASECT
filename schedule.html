@@ -159,7 +159,7 @@
               <th>حضور (نظري)</th>
               <th>حضور (عملي)</th>
               <th>إلكتروني (مدمج)</th>
-              <th>الاحتساب (ساعات)</th>
+              <th>الاحتساب (الساعات)</th>
               <th>حذف</th>
             </tr>
           </thead>
@@ -209,11 +209,11 @@
       download: true,
       header: true,
       complete: function(results) {
-        allCourses = results.data.filter(row => row['اسم المقرر']); 
+        allCourses = results.data.filter(row => row['المقرر']); 
         populateMajors();
       },
       error: function() {
-        majorSelect.innerHTML = '<option value="">حدث خطأ في تحميل ملف courses.csv</option>';
+        majorSelect.innerHTML = '<option value="">حدث خطأ في تحميل ملف الخطط</option>';
       }
     });
 
@@ -235,7 +235,7 @@
       const filteredCourses = allCourses.filter(c => c['التخصص'] === selectedMajor);
       courseSelect.innerHTML = '<option value="">-- اختر المقرر --</option>';
       filteredCourses.forEach(course => {
-        courseSelect.innerHTML += `<option value="${course['اسم المقرر']}">${course['اسم المقرر']}</option>`;
+        courseSelect.innerHTML += `<option value="${course['المقرر']}">${course['المقرر']}</option>`;
       });
       courseSelect.disabled = false;
     });
@@ -250,9 +250,9 @@
         return;
       }
 
-      const courseData = allCourses.find(c => c['اسم المقرر'] === selectedCourseName);
+      const courseData = allCourses.find(c => c['المقرر'] === selectedCourseName);
       
-      const originalTheory = parseFloat(courseData['نظري']) || 0;
+      const originalTheory = parseFloat(courseData['محاضرة']) || 0;
       const originalPractical = parseFloat(courseData['عملي']) || 0;
 
       let displayTheory = originalTheory;
