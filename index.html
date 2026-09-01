@@ -119,6 +119,35 @@
       line-height: 1.95;
     }
 
+    .hero-actions {
+      margin-top: 24px;
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .btn-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 28px;
+      background: var(--white);
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 800;
+      font-size: 15px;
+      border-radius: 16px;
+      transition: all 0.3s ease;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+      border: 2px solid transparent;
+    }
+
+    .btn-link:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+      background: var(--primary-3);
+      border-color: var(--white);
+    }
     .grid.two-cols {
       display: grid;
       grid-template-columns: 1.1fr 0.95fr;
@@ -460,6 +489,11 @@
           أداة مبسطة لعرض الفروقات بين <strong>التدريب عن بعد</strong> و<strong>التدريب الذاتي</strong>
           مع حاسبة فورية للنصاب التدريبي للمدرب وفق آلية الساعات المعتمدة.
         </p>
+        <div class="hero-actions">
+          <a href="schedule.html" class="btn-link" target="_blank">
+            الانتقال إلى بناء الجدول التدريبي 
+          </a>
+        </div>
       </div>
     </section>
 
